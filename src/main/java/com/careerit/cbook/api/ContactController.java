@@ -34,7 +34,11 @@ public class ContactController {
     String message = "Contact added successfully";
     return ResponseEntity.ok(message);
   }
-
+  @GetMapping("/export")
+  public ResponseEntity<?> export() {
+        contactService.export();
+        return ResponseEntity.ok().body("");
+  }
 
   @GetMapping("/greet")
   public ResponseEntity<String> greet() {
