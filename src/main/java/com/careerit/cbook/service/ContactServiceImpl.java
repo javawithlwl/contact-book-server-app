@@ -5,8 +5,13 @@ import com.careerit.cbook.dto.ContactDTO;
 import com.careerit.cbook.repo.ContactRepo;
 import com.careerit.cbook.util.ConvertorUtil;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,12 +36,13 @@ public class ContactServiceImpl implements ContactService {
 
 
   @Override
-  public List<ContactDTO> getAllContacts() {
-    List<Contact> contacts = contactRepo.findAll();
-    List<ContactDTO> contactList = contacts.stream()
+  public Page<ContactDTO> getAllContacts(Pageable pageable) {
+    Page<Contact> contactPage = contactRepo.findAll(pageable);
+    List<ContactDTO> contactList = contactPage.stream()
         .map(ele -> ConvertorUtil.convert(ele, ContactDTO.class))
         .collect(Collectors.toList());
-    return contactList;
+    Page page = new PageImpl(contactList,pageable,contactPage.getTotalElements());
+    return page;
   }
 
   @Override
@@ -61,14 +67,48 @@ public class ContactServiceImpl implements ContactService {
 
   @Override
   public void delete(String id) {
-
+        Assert.notNull(id,"To contact id can't be null or empty");
+        Contact contact = contactRepo.findById(id)
+            .orElseThrow(() -> {
+                log.error("Contact is not found, with id {}",id);
+                return new IllegalArgumentException("Contact is not found for given id" + id);
+                });
+        contactRepo.delete(contact);
+        log.info("Contact deleted with id :{}",id);
   }
 
   @Override
-  public void export() {
-
+  public File export() {
+    List<Contact> list = contactRepo.findAll();
+    String[] headings = new String[]{"Id","Name","Email","Dob","Mobile"};
+    List<String[]> data = new ArrayList<>();
+    data.add(headings);
+    for(Contact contact:list){
+        int i=0;
+        String[] arr = new String[5];
+        arr[i++] = contact.getId();
+        arr[i++]  = contact.getName();
+        arr[i++] = contact.getEmail();
+        arr[i++]  = contact.getDob().toString();
+        arr[i++] = contact.getPhone();
+        data.add(arr);
+    }
+    File file = getTempfile();
+    writeAllLines(data,file.toPath());
+    return file;
   }
 
+  public void writeAllLines(List<String[]> lines, Path path)  {
+    try (CSVWriter writer = new CSVWriter(new FileWriter(path.toString()))) {
+      writer.writeAll(lines);
+    }catch (IOException e){
+        log.error("{}",e);
+    }
+  }
+  private File getTempfile(){
+    File file = new File(System.getProperty("java.io.tmpdir") + "/" +System.currentTimeMillis()+"_"+"contacts.csv");
+    return file;
+  }
   @Override
   public List<ContactDTO> addAll(List<ContactDTO> list) {
     return null;
@@ -83,9 +123,7 @@ public class ContactServiceImpl implements ContactService {
       log.info("File has {} rows",list.size());
       List<Contact> contacts = list.stream().skip(1).map(ele -> {
         Contact contact = new Contact();
-        contact.setName(ele[0]);
-        contact.setEmail(ele[1]);
-        contact.setPhone(ele[2]);
+        contact.setName(ele[0]); contact.setEmail(ele[1]); contact.setPhone(ele[2]);
         contact.setDob(LocalDate.parse(ele[3]));
         return contact;
       }).collect(Collectors.toList());
@@ -94,7 +132,6 @@ public class ContactServiceImpl implements ContactService {
       contactListDto = contactList.stream()
           .map(ele -> ConvertorUtil.convert(ele, ContactDTO.class))
           .collect(Collectors.toList());
-
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
