@@ -3,5 +3,5 @@ RUN mkdir /home/poc
 copy . /home/poc
 RUN cd /home/poc && mvn package
 RUN cp /home/poc/target/*.jar app.jar
-EXPOSE 8081
+EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app.jar"]
