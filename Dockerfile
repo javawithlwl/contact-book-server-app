@@ -1,12 +1,7 @@
-FROM maven:3.8.2-jdk-11 AS build
+FROM maven:3.8.7-eclipse-temurin-19-alpine AS build
 COPY . .
 RUN mvn clean package -DskipTests
-
-#
-# Package stage
-#
-FROM openjdk:11-jdk-slim
-COPY --from=build /target/*.jar demo.jar
-# ENV PORT=8080
+FROM eclipse-temurin:19
+COPY --from=build /target/*.jar contact-book-app.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","demo.jar"]
+ENTRYPOINT ["java","-jar","contact-book-app.jar"]

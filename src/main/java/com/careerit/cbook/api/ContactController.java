@@ -3,7 +3,9 @@ package com.careerit.cbook.api;
 import com.careerit.cbook.dto.AppResponse;
 import com.careerit.cbook.dto.ContactDTO;
 import com.careerit.cbook.service.ContactService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class ContactController {
   }
 
   @GetMapping("/list")
-  public ResponseEntity<Page<ContactDTO>> getContacts(Pageable pageable) {
+  public ResponseEntity<Page<ContactDTO>> getContacts(@ParameterObject Pageable pageable) {
     Page<ContactDTO> contacts = contactService.getAllContacts(pageable);
     return ResponseEntity.ok(contacts);
   }
