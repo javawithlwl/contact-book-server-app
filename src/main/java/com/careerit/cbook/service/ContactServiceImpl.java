@@ -42,7 +42,7 @@ public class ContactServiceImpl implements ContactService {
     Page<Contact> contactPage = contactRepo.findAll(pageable);
     List<ContactDTO> contactList = contactPage.stream()
         .map(ele -> ConvertorUtil.convert(ele, ContactDTO.class))
-        .toList();
+        .collect(Collectors.toList());
     return new PageImpl<>(contactList,pageable,contactPage.getTotalElements());
   }
 
@@ -126,12 +126,12 @@ public class ContactServiceImpl implements ContactService {
         contact.setName(ele[0]); contact.setEmail(ele[1]); contact.setPhone(ele[2]);
         contact.setDob(LocalDate.parse(ele[3]));
         return contact;
-      }).toList();
+      }).collect(Collectors.toList());
       log.info("Contact counts in file {} is {}",file.getName(),contacts.size());
       List<Contact> contactList = contactRepo.saveAll(contacts);
       contactListDto = contactList.stream()
           .map(ele -> ConvertorUtil.convert(ele, ContactDTO.class))
-          .toList();
+          .collect(Collectors.toList());
     } catch (Exception e) {
       throw new ContactBookException("Reading file :"+e.getMessage());
     }
