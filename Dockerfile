@@ -3,5 +3,5 @@ RUN mkdir /home/contactbook
 copy . /home/contactbook
 RUN cd /home/contactbook && mvn package
 RUN cp /home/contactbook/target/*.jar contactbook.jar
-EXPOSE 8080
+EXPOSE 8082
 ENTRYPOINT ["java","-jar","/contactbook.jar"]
