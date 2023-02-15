@@ -2,6 +2,7 @@ package com.careerit.cbook.service;
 
 import com.careerit.cbook.domain.Contact;
 import com.careerit.cbook.dto.ContactDTO;
+import com.careerit.cbook.exception.ContactBookException;
 import com.careerit.cbook.repo.ContactRepo;
 import com.careerit.cbook.util.ConvertorUtil;
 import com.opencsv.CSVReader;
@@ -24,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,9 +42,8 @@ public class ContactServiceImpl implements ContactService {
     Page<Contact> contactPage = contactRepo.findAll(pageable);
     List<ContactDTO> contactList = contactPage.stream()
         .map(ele -> ConvertorUtil.convert(ele, ContactDTO.class))
-        .collect(Collectors.toList());
-    Page page = new PageImpl(contactList,pageable,contactPage.getTotalElements());
-    return page;
+        .toList();
+    return new PageImpl<>(contactList,pageable,contactPage.getTotalElements());
   }
 
   @Override
@@ -62,7 +63,7 @@ public class ContactServiceImpl implements ContactService {
 
   @Override
   public List<ContactDTO> search(String str) {
-    return null;
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
@@ -90,7 +91,7 @@ public class ContactServiceImpl implements ContactService {
         arr[i++]  = contact.getName();
         arr[i++] = contact.getEmail();
         arr[i++]  = contact.getDob().toString();
-        arr[i++] = contact.getPhone();
+        arr[i] = contact.getPhone();
         data.add(arr);
     }
     File file = getTempfile();
@@ -106,12 +107,11 @@ public class ContactServiceImpl implements ContactService {
     }
   }
   private File getTempfile(){
-    File file = new File(System.getProperty("java.io.tmpdir") + "/" +System.currentTimeMillis()+"_"+"contacts.csv");
-    return file;
+    return new File(System.getProperty("java.io.tmpdir") + "/" +System.currentTimeMillis()+"_"+"contacts.csv");
   }
   @Override
   public List<ContactDTO> addAll(List<ContactDTO> list) {
-    return null;
+      return Collections.emptyList();
   }
 
   @Override
@@ -126,14 +126,14 @@ public class ContactServiceImpl implements ContactService {
         contact.setName(ele[0]); contact.setEmail(ele[1]); contact.setPhone(ele[2]);
         contact.setDob(LocalDate.parse(ele[3]));
         return contact;
-      }).collect(Collectors.toList());
+      }).toList();
       log.info("Contact counts in file {} is {}",file.getName(),contacts.size());
       List<Contact> contactList = contactRepo.saveAll(contacts);
       contactListDto = contactList.stream()
           .map(ele -> ConvertorUtil.convert(ele, ContactDTO.class))
-          .collect(Collectors.toList());
+          .toList();
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      throw new ContactBookException("Reading file :"+e.getMessage());
     }
     return contactListDto;
   }
@@ -143,12 +143,12 @@ public class ContactServiceImpl implements ContactService {
     try {
       multipart.transferTo(convFile);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new ContactBookException("File not found,Check file permission or file location");
     }
     return convFile;
   }
 
-  private List<String[]> readAllLines(Path filePath) throws Exception {
+  private List<String[]> readAllLines(Path filePath) throws IOException {
     try (Reader reader = Files.newBufferedReader(filePath)) {
       try (CSVReader csvReader = new CSVReader(reader)) {
         return csvReader.readAll();
