@@ -4,6 +4,5 @@ import com.careerit.cbook.auth.domain.AppUser;
 
 public interface AppUserService {
 
-      public AppUser registerUser(AppUser appUser);
-      public AppUser findByUsername(String username);
+      AppUser register(AppUser appUser);
 }
